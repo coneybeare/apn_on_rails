@@ -18,61 +18,60 @@ class APN::App < APN::Base
   # As each APN::GroupNotification is sent the <tt>sent_at</tt> column will be timestamped,
   # so as to not be sent again.
   # 
-  def send_notifications
+  def send_notifications(conditions = {})
     if self.cert.nil?
       raise APN::Errors::MissingCertificateError.new
       return
     end
-    APN::App.send_notifications_for_cert(self.cert, self.id)
+    APN::App.send_notifications_for_cert(self.cert, self.id, conditions)
   end
   
-  def self.send_notifications
+  def self.send_notifications(conditions = {})
     apps = APN::App.all 
     apps.each do |app|
-      app.send_notifications
+      app.send_notifications(conditions)
     end
+    
     if !configatron.apn.cert.blank?
       global_cert = File.read(configatron.apn.cert)
-      send_notifications_for_cert(global_cert, nil)
+      send_notifications_for_cert(global_cert, nil, conditions)
     end
   end
   
-  def self.send_notifications_for_cert(the_cert, app_id)
+  def self.send_notifications_for_cert(the_cert, app_id, conditions = {})
     # unless self.unsent_notifications.nil? || self.unsent_notifications.empty?
-      if (app_id == nil)
-        conditions = "app_id is null"
-      else 
-        conditions = ["app_id = ?", app_id]
-      end
-      
-      puts "Sending #{notifications.length} push notifications"
-      attempts_left = 20;
-      i = 0;
-      last = 0;
-      
-      while attempts_left > 0
-        begin
-          APN::Connection.open_for_delivery({:cert => the_cert}) do |conn, sock|
-            APN::Device.find_each(:conditions => conditions) do |dev|
-              dev.unsent_notifications.each do |noty|
-                conn.write(noty.message_for_sending)
-                noty.sent_at = Time.now
-                noty.save
-                i += 1 ;
-                if (last != i/100 )
-                  last  = i/100
-                  puts "#{i} notifications sent"
-                end
+    
+    conditions1 = conditions.merge({:app_id => "null"}) 
+    conditions2 = [conditions1.keys.map{|k| "#{k} = ?"}.join(" AND "), conditions1.values].flatten
+    
+    puts "Sending #{notifications.length} push notifications"
+    attempts_left = 20;
+    i = 0;
+    last = 0;
+
+    while attempts_left > 0
+      begin
+        APN::Connection.open_for_delivery({:cert => the_cert}) do |conn, sock|
+          APN::Device.find_each(:conditions => conditions2) do |dev|
+            dev.unsent_notifications.each do |noty|
+              conn.write(noty.message_for_sending)
+              noty.sent_at = Time.now
+              noty.save
+              i += 1 ;
+              if (last != i/100 )
+                last  = i/100
+                puts "#{i} notifications sent"
               end
             end
           end
-          break;
-        rescue Exception => e
-          puts "SSL Error - recursing..."
-          log_connection_exception(e)
-          attempts_left -= 1
         end
+        break;
+      rescue Exception => e
+        puts "SSL Error - recursing..."
+        log_connection_exception(e)
+        attempts_left -= 1
       end
+    end
     # end   
   end
   

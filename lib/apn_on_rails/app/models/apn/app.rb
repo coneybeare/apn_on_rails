@@ -41,10 +41,11 @@ class APN::App < APN::Base
   def self.send_notifications_for_cert(the_cert, app_id, conditions = {})
     # unless self.unsent_notifications.nil? || self.unsent_notifications.empty?
     
-    conditions1 = conditions.merge({:app_id => "null"}) 
+    conditions1 = conditions.merge({:app_id => app_id}) 
     conditions2 = [conditions1.keys.map{|k| "#{k} = ?"}.join(" AND "), conditions1.values].flatten
     
-    puts "Sending #{notifications.length} push notifications"
+    puts "conditions: #{conditions2}"
+    
     attempts_left = 20;
     i = 0;
     last = 0;

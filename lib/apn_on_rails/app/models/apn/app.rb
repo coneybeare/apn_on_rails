@@ -44,7 +44,7 @@ class APN::App < APN::Base
     conditions1 = conditions.merge({:app_id => app_id}) 
     conditions2 = [conditions1.keys.map{|k| "#{k} = ?"}.join(" AND "), conditions1.values].flatten
     
-    puts "conditions: #{conditions2}"
+    #puts "conditions: #{conditions2}"
     
     attempts_left = 20;
     i = 0;
@@ -61,7 +61,7 @@ class APN::App < APN::Base
               i += 1 ;
               if (last != i/100 )
                 last  = i/100
-                puts "#{i} notifications sent"
+                puts " - #{i} notifications sent"
               end
             end
           end

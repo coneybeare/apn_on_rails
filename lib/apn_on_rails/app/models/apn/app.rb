@@ -44,18 +44,34 @@ class APN::App < APN::Base
       else 
         conditions = ["app_id = ?", app_id]
       end
-      begin
-        APN::Connection.open_for_delivery({:cert => the_cert}) do |conn, sock|
-          APN::Device.find_each(:conditions => conditions) do |dev|
-            dev.unsent_notifications.each do |noty|
-              conn.write(noty.message_for_sending)
-              noty.sent_at = Time.now
-              noty.save
+      
+      puts "Sending #{notifications.length} push notifications"
+      attempts_left = 20;
+      i = 0;
+      last = 0;
+      
+      while attempts_left > 0
+        begin
+          APN::Connection.open_for_delivery({:cert => the_cert}) do |conn, sock|
+            APN::Device.find_each(:conditions => conditions) do |dev|
+              dev.unsent_notifications.each do |noty|
+                conn.write(noty.message_for_sending)
+                noty.sent_at = Time.now
+                noty.save
+                i += 1 ;
+                if (last != i/100 )
+                  last  = i/100
+                  puts "#{i} notifications sent"
+                end
+              end
             end
           end
+          break;
+        rescue Exception => e
+          puts "SSL Error - recursing..."
+          log_connection_exception(e)
+          attempts_left -= 1
         end
-      rescue Exception => e
-        log_connection_exception(e)
       end
     # end   
   end

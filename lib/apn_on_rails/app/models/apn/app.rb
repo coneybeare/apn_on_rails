@@ -32,10 +32,10 @@ class APN::App < APN::Base
       app.send_notifications(conditions)
     end
     
-    if !configatron.apn.cert.blank?
-      global_cert = File.read(configatron.apn.cert)
-      send_notifications_for_cert(global_cert, nil, conditions)
-    end
+    # if !configatron.apn.cert.blank?
+    #   global_cert = File.read(configatron.apn.cert)
+    #   send_notifications_for_cert(global_cert, nil, conditions)
+    # end
   end
   
   def self.send_notifications_for_cert(the_cert, app_id, conditions = {})
@@ -139,10 +139,10 @@ class APN::App < APN::Base
     apps.each do |app|
       app.process_devices
     end
-    if !configatron.apn.cert.blank?
-      global_cert = File.read(configatron.apn.cert)
-      APN::App.process_devices_for_cert(global_cert)
-    end
+    # if !configatron.apn.cert.blank?
+    #   global_cert = File.read(configatron.apn.cert)
+    #   APN::App.process_devices_for_cert(global_cert)
+    # end
   end
   
   def self.process_devices_for_cert(the_cert)
